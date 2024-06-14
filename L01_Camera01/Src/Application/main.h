@@ -54,10 +54,11 @@ private:
 	//カメラ
 	std::shared_ptr<KdCamera>m_spCamera = nullptr;
 
-	//ポリゴンデータ
-	std::shared_ptr<KdSquarePolygon>m_spPoly = nullptr;
 
-	int Test=5;
+	//ゲームオブジェクトリスト
+	std::vector<std::shared_ptr<KdGameObject>>m_GameObjList;
+
+	int Test=0;
 	static const int Move = 1;
 //=====================================================
 // シングルトンパターン

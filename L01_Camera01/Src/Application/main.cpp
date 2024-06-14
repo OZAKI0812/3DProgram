@@ -1,5 +1,6 @@
 ﻿#include "main.h"
-
+#include"HamuHamu.h"
+#include"Terrain.h"
 // ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// /////
 // エントリーポイント
 // アプリケーションはこの関数から進行する
@@ -64,6 +65,38 @@ void Application::PreUpdate()
 // ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// /////
 void Application::Update()
 {
+	//カメラ行列の更新
+	{
+		if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+		{
+			Test += 5;
+		}
+		//大きさ
+		Math::Matrix _mScale = Math::Matrix::CreateScale(1);
+		//どれだけ傾けているか
+		Math::Matrix _mRotationX = Math::Matrix::CreateRotationX(DirectX::XMConvertToRadians(45));
+
+		Math::Matrix _mRotationY = Math::Matrix::CreateRotationY(DirectX::XMConvertToRadians(Test));
+		//基準点(ターゲット)からどれだけ離れているか
+		Math::Matrix _mTrans = Math::Matrix::CreateTranslation(0, 6, -5);
+	
+		_mTrans *= _mRotationY;
+		//カメラのワールド行列を作成、適応させる(行列の親子関係)
+		Math::Matrix _mWorld = (_mScale * _mRotationX * _mTrans * _mRotationY);//* m_mHamuWorid/** _mRotationY*/;//_mWorld行列をいかに計算できるかが大事	行列の合成
+		//World=S(scale)*R(Rotation)*T(Translation)
+		//カメラを原点におく(0,0,0)
+		//x軸つまんで45度回転0
+		//y
+		m_spCamera->SetCameraMatrix(_mWorld);
+	}
+	
+	//全ゲームオブジェクトの描画
+	{ 
+		for (std::shared_ptr<KdGameObject>gameObj : m_GameObjList)
+		{
+			gameObj->Update();
+		}
+	}
 }
 
 // ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// /////
@@ -120,12 +153,11 @@ void Application::Draw()
 	// 陰影のあるオブジェクト(不透明な物体や2Dキャラ)はBeginとEndの間にまとめてDrawする
 	KdShaderManager::Instance().m_StandardShader.BeginLit();
 	{
-		///////////////////////////////////
-		if (GetAsyncKeyState('W') & 0x8000){Test -= 1;}
-		if (GetAsyncKeyState('S') & 0x8000){Test += 1;}
-
-		Math::Matrix _mat = Math::Matrix::CreateTranslation(0, 0, 5);
-		KdShaderManager::Instance().m_StandardShader.DrawPolygon(*m_spPoly, _mat);
+		//全ゲームオブジェクトの描画
+		for (std::shared_ptr<KdGameObject>gameObj : m_GameObjList)
+		{
+			gameObj->DrawLit();
+		}
 	}
 	KdShaderManager::Instance().m_StandardShader.EndLit();
 
@@ -234,10 +266,23 @@ bool Application::Init(int w, int h)
 	m_spCamera = std::make_shared<KdCamera>();
 
 	//===================================================================
-	// ポリゴン初期化
+	// ハム太郎初期化
 	//===================================================================
-	m_spPoly = std::make_shared<KdSquarePolygon>();
-	m_spPoly->SetMaterial("Asset/Data/LessonData/Character/Hamu.png");
+	std::shared_ptr<HamuHamu>_Hamu = std::make_shared<HamuHamu>();
+	_Hamu->Init();
+
+	//★重要★
+	m_GameObjList.push_back(_Hamu);
+
+	//===================================================================
+	// 地形初期化
+	//===================================================================
+	std::shared_ptr<Terrain>_Terrain = std::make_shared<Terrain>();
+	_Terrain->Init();
+
+	//★重要★
+	m_GameObjList.push_back(_Terrain);
+
 
 	return true;
 }
